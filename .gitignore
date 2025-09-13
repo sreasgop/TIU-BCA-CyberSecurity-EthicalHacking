@@ -1,0 +1,36 @@
+# Executable files
+*.exe
+*.app
+*.deb
+*.rpm
+*.msi
+*.dmg
+
+# Compiled binaries
+*.out
+*.bin
+*.o
+*.so
+*.dll
+*.dylib
+
+# Build directories (common places for executables)
+build/
+dist/
+bin/
+target/
+out/
+.vscode/
+waste/
+
+# Platform-specific executables
+# Windows
+*.bat
+*.cmd
+*.com
+*.scr
+
+# Unix/Linux (files without extension that are executable)
+# Add specific names as needed, like:
+# my-program
+# server
