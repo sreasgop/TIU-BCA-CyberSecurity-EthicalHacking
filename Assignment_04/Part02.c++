@@ -74,11 +74,11 @@ PasswordAnalysis rate_password(const string& pwd) {
         score += 30;
         feedback.emplace_back("✓ Excellent length (16+ characters)", true);
     } else if (len >= 12) {
-        score += 25;
-        feedback.emplace_back("✓ Good length (12-15 characters)", true);
+        score += 20;
+        feedback.emplace_back("* ✓ Good length (12-15 characters)", true);
     } else if (len >= 8) {
-        score += 15;
-        feedback.emplace_back("✓ Acceptable length (8-11 characters)", true);
+        score += 10;
+        feedback.emplace_back("⚠ Acceptable length (8-11 characters)", true);
     } else {
         score += 5;
         feedback.emplace_back("✗ Too short (<8 characters - increase for security)", false);
@@ -90,7 +90,7 @@ PasswordAnalysis rate_password(const string& pwd) {
         feedback.emplace_back("✓ Full character variety (upper, lower, digits, symbols)", true);
     } else if (variety == 3) {
         score += 20;
-        feedback.emplace_back("✓ Good variety (3 character types)", true);
+        feedback.emplace_back("* ✓ Good variety (3 character types)", true);
     } else if (variety == 2) {
         score += 10;
         feedback.emplace_back("⚠ Fair variety (2 types) - add more types for strength", false);
@@ -106,13 +106,14 @@ PasswordAnalysis rate_password(const string& pwd) {
     for (const auto& pat : common_patterns) {
         if (lower_pwd.find(to_lower(pat)) != string::npos) {
             has_common = true;
-            score -= 15;
+            score -= 10;
             feedback.emplace_back("✗ Contains common pattern: '" + pat + "' - avoid dictionary words", false);
             break;
         }
     }
     if (!has_common) {
         feedback.emplace_back("✓ No common or dictionary patterns detected", true);
+        score += 10;
     }
 
     // Repeated characters penalty (consecutive or triples)
@@ -134,6 +135,7 @@ PasswordAnalysis rate_password(const string& pwd) {
         feedback.emplace_back("✗ Contains repeated characters - use unique sequences", false);
     } else {
         feedback.emplace_back("✓ No repeated characters", true);
+        score += 10;
     }
 
     // Sequential characters penalty (e.g., abc, 123)
@@ -159,6 +161,7 @@ PasswordAnalysis rate_password(const string& pwd) {
         feedback.emplace_back("✗ Contains sequential characters (e.g., abc/123) - randomize more", false);
     } else {
         feedback.emplace_back("✓ No sequential patterns", true);
+        score += 10;
     }
 
     // Uniqueness/Entropy bonus (high ratio of unique chars)
@@ -185,6 +188,8 @@ PasswordAnalysis rate_password(const string& pwd) {
     return {label, score, feedback};
 }
 
+
+
 int get_choice(int min, int max) {
     int choice;
     while(true){
@@ -192,45 +197,69 @@ int get_choice(int min, int max) {
         if(cin >> choice && choice >= min && choice <= max) {
             cin.ignore(numeric_limits<streamsize>::max(),'\n');
             return choice;
-        }
+        } 
         else {
-            cout << "Invalid choice. Try again.\n";
+            cout << "Invalid choice. Try again. \nPress '0' to print menu.\n";
             cin.clear();
             cin.ignore(numeric_limits<streamsize>::max(),'\n');
         }
     }
 }
 
+void print_menu(){
+    cout << "\n\n--------------------------" << endl;
+    cout << "|    Interactive Menu    |" << endl;
+	cout << "--------------------------" << endl;
+    cout << "1. Generate multiple suggestions (random mode)" << endl;
+    cout << "2. Generate password with specified length" << endl;
+    cout << "3. Rate strength of an existing password" << endl;
+    cout << "4. Exit" << endl;
+}
+
 int main() {
-    cout << "Ultimate Password Generator & Analyzer" << endl;
-    cout << "======================================" << endl;
+    cout << "\n=======================================================" << endl;
+    cout << "||   Ultimate Password Generator, Rater & Analyzer   ||" << endl;
+    cout << "=======================================================" << endl;
     // cout << "Powered by advanced randomness, diversity enforcement, and comprehensive checks." << endl;
     // cout << "Supports random lengths (6-25), custom lengths, and rating existing passwords." << endl;
     // cout << "Feedback uses ✓ (good), ⚠ (warning), ✗ (bad) for clarity." << endl << endl;
 
     int choice;
-    do {
-	
-	cout << "\n------------------------" << endl;
-        cout << "--- Interactive Menu ---" << endl;
-	cout << "------------------------" << endl;
-        cout << "1. Generate completely random password (auto length 6-25)" << endl;
-        cout << "2. Generate password with specified length" << endl;
-        cout << "3. Rate strength of an existing password" << endl;
-        cout << "4. Generate multiple suggestions (random mode)" << endl;
-        cout << "5. Exit" << endl;
-        // cout << "Your choice (1-6): ";
-        choice = get_choice(1, 5);
+    print_menu();
+    
+    int count = 0;
 
-        if (choice == 1 || choice == 4) {
+    do {
+        if(count > 0){
+            cout << "\n\nPress '0' to see Interactive Menu Options.\nPress '4' to exit.";
+        }
+        choice = get_choice(0, 4);
+        count+=1;
+
+        if(choice == 0){
+            print_menu();
+        } else if (choice == 1) {
+            int num_to_gen;
+            int temp;
             random_device rd;
             mt19937 gen(rd());
-            uniform_int_distribution<> len_dist(6, 25);
-            int num_to_gen = (choice == 4) ? 3 : 1;
+            uniform_int_distribution<> len_dist(10, 30);
+            cout << "Enter number of passwords: ";
+            if(cin >> temp && temp >= 1 && temp <= 100)  {
+                cin.ignore(numeric_limits<streamsize>::max(),'\n');
+                num_to_gen = temp;
+            }
+            else {
+                cout << "Invalid choice. Enter number between 1 and 100.\n";
+                cin.clear();
+                cin.ignore(numeric_limits<streamsize>::max(),'\n');
+                continue;
+            }
+            cout << endl << endl;
             for (int g = 0; g < num_to_gen; ++g) {
                 int len = len_dist(gen);
                 string pwd = generate_password(len);
-                cout << "\n[" << (g+1) << "/" << num_to_gen << "] Generated (len " << len << "): " << pwd << endl;
+                cout << "\n\n[" << (g+1) << "/" << num_to_gen << "] Generated Password (len " << len << "): " << pwd << endl;
                 auto analysis = rate_password(pwd);
                 cout << "Strength: " << analysis.label << " (Score: " << analysis.score << "/100)" << endl;
                 cout << "Analysis:" << endl;
@@ -246,7 +275,7 @@ int main() {
             if (len < 6) len = 6;
             if (len > 50) len = 50;
             string pwd = generate_password(len);
-            cout << "\nGenerated (len " << len << "): " << pwd << endl;
+            cout << "\n\nGenerated Password (len " << len << "): " << pwd << endl;
             auto analysis = rate_password(pwd);
             cout << "Strength: " << analysis.label << " (Score: " << analysis.score << "/100)" << endl;
             cout << "Analysis:" << endl;
@@ -262,17 +291,18 @@ int main() {
                 continue;
             }
             auto analysis = rate_password(pwd);
-            cout << "\nStrength: " << analysis.label << " (Score: " << analysis.score << "/100)" << endl;
+            cout << "\n\nStrength: " << analysis.label << " (Score: " << analysis.score << "/100)" << endl;
             cout << "Analysis:" << endl;
             for (const auto& item : analysis.feedback) {
                 cout << "  " << item.first << endl;
             }
-        } else if (choice == 5) {
-            cout << "\nThanks for using the Ultimate Password Tool! Stay secure." << endl;
+            cout << string(50, '-') << endl;
+        } else if (choice == 4) {
+            cout << "\nExiting Program!" << endl;
         } else {
-            cout << "Invalid choice - please try 1-5." << endl;
+            cout << "Invalid choice - Please try 1-5." << endl;
         }
-    } while (choice != 5);
+    } while (choice != 4);
 
     return 0;
 }
